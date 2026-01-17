@@ -1,3 +1,10 @@
+const botSprites = [
+  ["img/pipes/goth2.png", "img/pipes/goth2-reverse.png"],
+  ["img/pipes/m-goth3.png", "img/pipes/m-goth3-reverse.png"],
+  ["img/pipes/m-goth5.png", "img/pipes/m-goth5-reverse.png"],
+  ["img/pipes/m-goth4.png", "img/pipes/m-goth4-reverse.png"],
+];
+
 const RAD = Math.PI / 180;
 const scrn = document.getElementById("canvas");
 const sctx = scrn.getContext("2d");
@@ -14,7 +21,7 @@ scrn.addEventListener("click", () => {
     case state.gameOver:
       state.curr = state.getReady;
       bird.speed = 0;
-      bird.y = 100;
+      bird.y = scrn.height / 4;
       pipe.pipes = [];
       UI.score.curr = 0;
       SFX.played = false;
@@ -87,38 +94,51 @@ const bg = {
 const pipe = {
   top: { sprite: new Image() },
   bot: { sprite: new Image() },
-  gap: 85,
+  gap: 136,
   moved: true,
   pipes: [],
   draw: function () {
     for (let i = 0; i < this.pipes.length; i++) {
       let p = this.pipes[i];
-      sctx.drawImage(this.top.sprite, p.x, p.y);
+      sctx.drawImage(p.top.sprite, p.x, p.y);
       sctx.drawImage(
-        this.bot.sprite,
+        p.bot.sprite,
         p.x,
-        p.y + parseFloat(this.top.sprite.height) + this.gap
+        p.y + parseFloat(p.top.sprite.height) + this.gap,
       );
     }
   },
   update: function () {
     if (state.curr != state.Play) return;
-    if (frames % 100 == 0) {
+    if (frames % 120 == 0) {
+      const topImage = new Image();
+      const botImage = new Image();
+      const randomImage = botSprites.at(
+        Math.floor(Math.random() * botSprites.length),
+      );
+      topImage.src = randomImage[1];
+      botImage.src = randomImage[0];
       this.pipes.push({
+        top: { sprite: topImage },
+        bot: { sprite: botImage },
         x: parseFloat(scrn.width),
-        y: -210 * Math.min(Math.random() + 1, 1.8),
+        y: -800 + 10 * Math.floor(Math.random() * 27) + 70,
       });
     }
     this.pipes.forEach((pipe) => {
       pipe.x -= dx;
     });
 
-    if (this.pipes.length && this.pipes[0].x < -this.top.sprite.width) {
+    if (
+      this.pipes.length &&
+      this.pipes[0].x < -this.pipes[0].bot.sprite.width
+    ) {
       this.pipes.shift();
       this.moved = true;
     }
   },
 };
+
 const bird = {
   animations: [
     { sprite: new Image() },
@@ -182,7 +202,9 @@ const bird = {
   },
   flap: function () {
     if (this.y > 0) {
-      SFX.flap.play();
+      if (frames > 200) {
+        SFX.flap.play();
+      }
       this.speed = -this.thrust;
     }
   },
@@ -193,15 +215,16 @@ const bird = {
       this.rotatation = Math.min(90, (90 * this.speed) / (this.thrust * 2));
     }
   },
+
   collisioned: function () {
     if (!pipe.pipes.length) return;
     let bird = this.animations[0].sprite;
     let x = pipe.pipes[0].x;
     let y = pipe.pipes[0].y;
     let r = bird.height / 4 + bird.width / 4;
-    let roof = y + parseFloat(pipe.top.sprite.height);
+    let roof = y + parseFloat(pipe.pipes[0].top.sprite.height);
     let floor = roof + pipe.gap;
-    let w = parseFloat(pipe.top.sprite.width);
+    let w = parseFloat(pipe.pipes[0].top.sprite.width);
     if (this.x + r >= x) {
       if (this.x + r < x + w) {
         if (this.y - r <= roof || this.y + r >= floor) {
@@ -265,11 +288,11 @@ const UI = {
       case state.gameOver:
         sctx.lineWidth = "2";
         sctx.font = "40px Squada One";
-        let sc = `SCORE :     ${this.score.curr}`;
+        let sc = `GOTH GFs :     ${this.score.curr}`;
         try {
           this.score.best = Math.max(
             this.score.curr,
-            localStorage.getItem("best")
+            localStorage.getItem("best"),
           );
           localStorage.setItem("best", this.score.best);
           let bs = `BEST  :     ${this.score.best}`;
@@ -293,22 +316,22 @@ const UI = {
 };
 
 gnd.sprite.src = "img/ground.png";
-bg.sprite.src = "img/BG.png";
+bg.sprite.src = "img/emo-bg.jpg";
 pipe.top.sprite.src = "img/toppipe.png";
 pipe.bot.sprite.src = "img/botpipe.png";
 UI.gameOver.sprite.src = "img/go.png";
 UI.getReady.sprite.src = "img/getready.png";
 UI.tap[0].sprite.src = "img/tap/t0.png";
 UI.tap[1].sprite.src = "img/tap/t1.png";
-bird.animations[0].sprite.src = "img/bird/b0.png";
-bird.animations[1].sprite.src = "img/bird/b1.png";
-bird.animations[2].sprite.src = "img/bird/b2.png";
-bird.animations[3].sprite.src = "img/bird/b0.png";
-SFX.start.src = "sfx/start.wav";
-SFX.flap.src = "sfx/flap.wav";
+bird.animations[0].sprite.src = "img/bird/p0.png";
+bird.animations[1].sprite.src = "img/bird/p1.png";
+bird.animations[2].sprite.src = "img/bird/p2.png";
+bird.animations[3].sprite.src = "img/bird/p3.png";
+SFX.start.src = "sfx/muierea.mp3";
+SFX.flap.src = "sfx/boule-fast.mp3";
 SFX.score.src = "sfx/score.wav";
-SFX.hit.src = "sfx/hit.wav";
-SFX.die.src = "sfx/die.wav";
+SFX.hit.src = "sfx/anime-ahh.mp3";
+SFX.die.src = "sfx/rusia-betiv.mp3";
 
 function gameLoop() {
   update();
@@ -324,7 +347,7 @@ function update() {
 }
 
 function draw() {
-  sctx.fillStyle = "#30c0df";
+  sctx.fillStyle = "#4c2c5f";
   sctx.fillRect(0, 0, scrn.width, scrn.height);
   bg.draw();
   pipe.draw();
